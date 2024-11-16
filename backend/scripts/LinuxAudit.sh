@@ -12,6 +12,15 @@ function ctrl_c() {
     exit 0
 }
 
+# Get output path from command line argument
+output_path="$1"
+
+if [ -z "$output_path" ]; then
+    echo "Error: Output path not provided"
+    echo "Usage: $0 /path/to/output/file.txt"
+    exit 1
+fi
+
 echo "###############################################"
 echo "###############################################"
 echo "###############################################"
@@ -31,25 +40,7 @@ echo
 sleep 3
 echo
 
-# Prompt for saving output
-while true; do
-    read -p "Would you like to save the output? [Y/N] " output
-    case "${output^^}" in
-        Y)
-            read -p "Please enter the path to save the output (e.g., /path_to_save/LinuxAudit.txt): " path
-            echo "File will be saved to $path/LinuxAudit.txt"
-            break
-            ;;
-        N)
-            echo "OK, not saving. Moving on."
-            break
-            ;;
-        *)
-            echo "Invalid input. Please enter Y or N."
-            ;;
-    esac
-done
-
+echo "File will be saved to $output_path"
 echo
 echo "OK... $HOSTNAME ...let's continue, please wait for it to finish:"
 echo
@@ -92,7 +83,6 @@ perform_audit() {
     service --status-all | grep "+"
     echo "###############################################"
 
-    # TODO
     # Active Internet Connections and Open Ports
     echo -e "\e[0;33m 7. Active Internet Connections and Open Ports \e[0m"
     netstat -natp
@@ -108,13 +98,11 @@ perform_audit() {
     free -h
     echo "###############################################"
 
-    # TODO
     # Command History
     echo -e "\e[0;33m 10. Command History \e[0m"
     history
     echo "###############################################"
 
-    # TODO
     # Network Interfaces
     echo -e "\e[0;33m 11. Network Interfaces \e[0m"
     ifconfig -a
@@ -130,16 +118,10 @@ perform_audit() {
     ps -a
     echo "###############################################"
 
-    # TODO
     # SSH Configuration
     echo -e "\e[0;33m 14. SSH Configuration \e[0m"
     cat /etc/ssh/sshd_config
     echo "###############################################"
-
-    # List Installed Packages
-    # echo -e "\e[0;33m 15. List Installed Packages \e[0m"
-    # apt-cache pkgnames
-    # echo "###############################################"
 
     # Network Parameters
     echo -e "\e[0;33m 16. Network Parameters \e[0m"
@@ -161,7 +143,6 @@ perform_audit() {
     apt-get check
     echo "###############################################"
 
-    # TODO
     # MOTD Banner Message
     echo -e "\e[0;33m 20. MOTD Banner Message \e[0m"
     cat /etc/motd
@@ -172,7 +153,6 @@ perform_audit() {
     cut -d: -f1 /etc/passwd
     echo "###############################################"
 
-    # TODO
     # Check for Null Passwords
     echo -e "\e[0;33m 22. Check for Null Passwords \e[0m"
     users="$(cut -d: -f 1 /etc/passwd)"
@@ -181,7 +161,6 @@ perform_audit() {
     done
     echo "###############################################"
 
-    # TODO
     # IP Routing Table
     echo -e "\e[0;33m 23. IP Routing Table \e[0m"
     route
@@ -210,19 +189,14 @@ perform_audit() {
     cat /etc/hosts.deny
     echo "###############################################"
 
-    # TODO
     # Failed Login Attempts
     echo -e "\e[0;33m 28. Failed Login Attempts \e[0m"
     grep --color "failure" /var/log/auth.log
     echo "###############################################"
 }
 
-# Execute the audit and save to file if requested
-if [[ "${output^^}" == "Y" ]]; then
-    perform_audit > "$path/LinuxAudit.txt"
-else
-    perform_audit
-fi
+# Execute the audit and save to file
+perform_audit > "$output_path"
 
 echo
 echo "###############################################"
