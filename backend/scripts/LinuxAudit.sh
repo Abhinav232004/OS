@@ -1,212 +1,211 @@
 #!/bin/bash
 
-# Clear the screen
-tput clear
+# Author: Dishit Sharma
+# Description: The AuditAnalyzer project is designed to provide comprehensive system auditing and monitoring 
+# capabilities for administrators and users. By aggregating essential system information, user activity logs, 
+# network statistics, and performance metrics, it empowers users to maintain a secure and efficient operating environment.
 
-# Trap Ctrl+C
-trap ctrl_c INT
+# Date: 16-11-2024
 
-# Function to handle Ctrl+C
-function ctrl_c() {
-    echo "** You pressed Ctrl+C... Exiting"
-    exit 0
+# Function to check if a command exists
+command_exists() {
+  command -v "$1" &> /dev/null
 }
 
-# Get output path from command line argument
-output_path="$1"
-
-if [ -z "$output_path" ]; then
-    echo "Error: Output path not provided"
-    echo "Usage: $0 /path/to/output/file.txt"
-    exit 1
-fi
-
-echo "###############################################"
-echo "###############################################"
-echo "###############################################"
-echo "_    _                 _          _ _ _   "
-echo "| |  (_)_ _ _  ___ __  /_\ _  _ __| (_) |_ "
-echo "| |__| |   \ || \ \ / / _ \ || / _  | |  _|"
-echo "|____|_|_||_\_ _/_\_\/_/ \_\_ _\__ _|_|\__|"
-echo
-echo "###############################################"
-echo "Welcome to security audit of your Linux machine:"
-echo "###############################################"
-echo
-echo "The script will automatically gather the required information."
-echo "The checklist can help you in the process of hardening your system."
-echo "Note: It has been tested for Ubuntu Linux Distro."
-echo
-sleep 3
-echo
-
-echo "File will be saved to $output_path"
-echo
-echo "OK... $HOSTNAME ...let's continue, please wait for it to finish:"
-echo
-sleep 3
-echo
-echo "Script Starts ;)"
-START=$(date +%s)
-echo
-
-# Function to perform audit and write to file
-perform_audit() {
-    # Kernel Information
-    echo -e "\e[0;33m 1. Linux Kernel Information \e[0m"
-    uname -a
-    echo "###############################################"
-
-    # Current User and ID Information
-    echo -e "\e[0;33m 2. Current User and ID Information \e[0m"
-    whoami
-    id
-    echo "###############################################"
-
-    # Linux Distribution Information
-    echo -e "\e[0;33m 3. Linux Distribution Information \e[0m"
-    lsb_release -a
-    echo "###############################################"
-
-    # List Current Logged In Users
-    echo -e "\e[0;33m 4. List Current Logged In Users \e[0m"
-    w
-    echo "###############################################"
-
-    # Uptime Information
-    echo -e "\e[0;33m 5. Uptime Information \e[0m"
-    uptime
-    echo "###############################################"
-
-    # Running Services
-    echo -e "\e[0;33m 6. Running Services \e[0m"
-    service --status-all | grep "+"
-    echo "###############################################"
-
-    # Active Internet Connections and Open Ports
-    echo -e "\e[0;33m 7. Active Internet Connections and Open Ports \e[0m"
-    netstat -natp
-    echo "###############################################"
-
-    # Available Disk Space
-    echo -e "\e[0;33m 8. Available Disk Space \e[0m"
-    df -h
-    echo "###############################################"
-
-    # Memory Usage
-    echo -e "\e[0;33m 9. Memory Usage \e[0m"
-    free -h
-    echo "###############################################"
-
-    # Command History
-    echo -e "\e[0;33m 10. Command History \e[0m"
-    history
-    echo "###############################################"
-
-    # Network Interfaces
-    echo -e "\e[0;33m 11. Network Interfaces \e[0m"
-    ifconfig -a
-    echo "###############################################"
-
-    # IPtables Information
-    echo -e "\e[0;33m 12. IPtables Information \e[0m"
-    iptables -L -n -v
-    echo "###############################################"
-
-    # Running Processes
-    echo -e "\e[0;33m 13. Running Processes \e[0m"
-    ps -a
-    echo "###############################################"
-
-    # SSH Configuration
-    echo -e "\e[0;33m 14. SSH Configuration \e[0m"
-    cat /etc/ssh/sshd_config
-    echo "###############################################"
-
-    # Network Parameters
-    echo -e "\e[0;33m 16. Network Parameters \e[0m"
-    cat /etc/sysctl.conf
-    echo "###############################################"
-
-    # Password Policies
-    echo -e "\e[0;33m 17. Password Policies \e[0m"
-    cat /etc/pam.d/common-password
-    echo "###############################################"
-
-    # Source List File
-    echo -e "\e[0;33m 18. Source List File \e[0m"
-    cat /etc/apt/sources.list
-    echo "###############################################"
-
-    # Check for Broken Dependencies
-    echo -e "\e[0;33m 19. Check for Broken Dependencies \e[0m"
-    apt-get check
-    echo "###############################################"
-
-    # MOTD Banner Message
-    echo -e "\e[0;33m 20. MOTD Banner Message \e[0m"
-    cat /etc/motd
-    echo "###############################################"
-
-    # List User Names
-    echo -e "\e[0;33m 21. List User Names \e[0m"
-    cut -d: -f1 /etc/passwd
-    echo "###############################################"
-
-    # Check for Null Passwords
-    echo -e "\e[0;33m 22. Check for Null Passwords \e[0m"
-    users="$(cut -d: -f 1 /etc/passwd)"
-    for x in $users; do
-        passwd -S $x | grep "NP"
-    done
-    echo "###############################################"
-
-    # IP Routing Table
-    echo -e "\e[0;33m 23. IP Routing Table \e[0m"
-    route
-    echo "###############################################"
-
-    # Kernel Messages
-    echo -e "\e[0;33m 24. Kernel Messages \e[0m"
-    dmesg
-    echo "###############################################"
-
-    # Check Upgradable Packages
-    echo -e "\e[0;33m 25. Check Upgradable Packages \e[0m"
-    apt list --upgradeable
-    echo "###############################################"
-
-    # CPU/System Information
-    echo -e "\e[0;33m 26. CPU/System Information \e[0m"
-    cat /proc/cpuinfo
-    echo "###############################################"
-
-    # TCP Wrappers
-    echo -e "\e[0;33m 27. TCP Wrappers \e[0m"
-    echo "hosts.allow:"
-    cat /etc/hosts.allow
-    echo "hosts.deny:"
-    cat /etc/hosts.deny
-    echo "###############################################"
-
-    # Failed Login Attempts
-    echo -e "\e[0;33m 28. Failed Login Attempts \e[0m"
-    grep --color "failure" /var/log/auth.log
-    echo "###############################################"
+# Function to log the system details to a report
+generate_report() {
+  echo "Audit Report - $(date)" > "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
 }
 
-# Execute the audit and save to file
-perform_audit > "$output_path"
+# Function to append system information
+system_info() {
+  echo "System Hostname: $(hostname)" >> "$REPORT_FILE"
+  echo "------------------------------------------------------------------------------" >> "$REPORT_FILE"
 
-echo
-echo "###############################################"
-echo
-END=$(date +%s)
-DIFF=$((END - START))
-echo "Script completed in $DIFF seconds."
-echo
-echo "Executed on:"
-date
-echo
+  echo "Current User: $(whoami)" >> "$REPORT_FILE"
+  echo "------------------------------------------------------------------------------" >> "$REPORT_FILE"
 
-exit 0
+  echo "Current Directory: $(pwd)" >> "$REPORT_FILE"
+  echo "------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "System Uptime: $(uptime -p)" >> "$REPORT_FILE"
+  echo "------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "System Load Average: $(uptime | awk -F'load average: ' '{ print $2 }')" >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log active users and system activity
+user_activity() {
+  echo "Currently logged in users:" >> "$REPORT_FILE"
+  who >> "$REPORT_FILE"
+  echo "-----------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Last logged in users (last 10):" >> "$REPORT_FILE"
+  last -n 10 >> "$REPORT_FILE"
+  echo "-----------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Last commands executed (last 15):" >> "$REPORT_FILE"
+  tail -n 15 ~/.bash_history >> "$REPORT_FILE"
+  echo "-----------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Recent Activity (top 10 users by activity):" >> "$REPORT_FILE"
+  w -h | head -n 10 >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log system resource usage
+system_resources() {
+  echo "Disk Space Usage:" >> "$REPORT_FILE"
+  df >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Memory Usage:" >> "$REPORT_FILE"
+  free -h >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Top 10 Processes by CPU usage:" >> "$REPORT_FILE"
+  ps -eo pid,comm,%cpu --sort=-%cpu | head -n 11 >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Top 10 Processes by Memory usage:" >> "$REPORT_FILE"
+  ps -eo pid,comm,%mem --sort=-%mem | head -n 11 >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log network info
+network_info() {
+  echo "Network Interfaces and Addresses:" >> "$REPORT_FILE"
+  ip addr >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "MAC Addresses:" >> "$REPORT_FILE"
+  ip link | awk '/ether/ {print $2}' >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "IP Address and loopback address: " >> "$REPORT_FILE"
+  ip addr | grep inet >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log OS information
+os_info() {
+  echo "Operating System Information:" >> "$REPORT_FILE"
+  cat /etc/os-release >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log network traffic info
+network_traffic() {
+  echo "Network Traffic Report" >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Active Connections (netstat):" >> "$REPORT_FILE"
+  netstat -tuln >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Socket Statistics (ss):" >> "$REPORT_FILE"
+  ss -tuln >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log system services
+system_services() {
+  echo "Active and Failed Services (systemd):" >> "$REPORT_FILE"
+  systemctl --type=service --state=failed >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log sudoers info
+sudoers_info() {
+  echo "Sudoers File (Users with Sudo Access):" >> "$REPORT_FILE"
+  grep -Po '^sudo.+:\K.*' /etc/group >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to log the top command output if user requests
+include_top_command() {
+  read -p "Include top command output? (yes/no): " INCLUDE_TOP
+  if [[ "$INCLUDE_TOP" == "yes" ]]; then
+    echo "Top Processes (top -b -n 1):" >> "$REPORT_FILE"
+    top -b -n 1 >> "$REPORT_FILE"
+    echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+  fi
+}
+
+# Function to include additional system commands
+additional_system_commands() {
+  echo "System Uptime (from uptime command):" >> "$REPORT_FILE"
+  uptime >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Status of All Services (service --status-all):" >> "$REPORT_FILE"
+  service --status-all | grep "+" >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Netstat (Active Network Connections):" >> "$REPORT_FILE"
+  netstat -natp >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Network Interfaces (ifconfig -a):" >> "$REPORT_FILE"
+  ifconfig -a >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Iptables (Firewall Rules):" >> "$REPORT_FILE"
+  iptables -L -n -v >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+
+  echo "Routing Table (route command):" >> "$REPORT_FILE"
+  route >> "$REPORT_FILE"
+  echo "-------------------------------------------------------------------------------" >> "$REPORT_FILE"
+}
+
+# Function to generate PDF from the text report
+generate_pdf() {
+  if command_exists a2ps && command_exists ps2pdf; then
+    a2ps "$REPORT_FILE" -o "${REPORT_FILE%.txt}.ps"
+    ps2pdf "${REPORT_FILE%.txt}.ps" "$PDF_FILE"
+    rm "${REPORT_FILE%.txt}.ps"
+    echo "PDF report generated: $PDF_FILE"
+  else
+    echo "Error: Required tools 'a2ps' or 'ps2pdf' not found. PDF generation skipped."
+  fi
+}
+
+# Function to ask for PDF file name from user input
+get_pdf_filename() {
+  read -p "Enter the desired name for the PDF report (without extension): " PDF_FILENAME
+  PDF_FILE="${PDF_FILENAME}.pdf"
+}
+
+# Main Execution
+
+# Generate a timestamped filename for the text report
+REPORT_FILE="Auditing_Report_$(date +'%Y-%m-%d_%H-%M-%S')"
+
+# Ask the user for the PDF filename
+get_pdf_filename
+
+# Start creating the audit report
+generate_report
+system_info
+user_activity
+system_resources
+network_info
+os_info
+network_traffic
+system_services
+sudoers_info
+additional_system_commands
+
+# Ask if the user wants to include the top command output
+include_top_command
+
+# Generate the PDF with the provided filename
+generate_pdf
+
+# Clean up the temporary files
+rm "$REPORT_FILE"
+
+echo "Audit report process completed."

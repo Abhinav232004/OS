@@ -5,51 +5,18 @@ import { Printer, Download, AlertCircle, Terminal } from 'lucide-react';
 import { Alert, AlertDescription } from './components/ui/alert';
 
 const AuditLogger = () => {
-  const [auditData, setAuditData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fileName, setFileName] = useState(null);
   const [error, setError] = useState(null);
   const [outputPath, setOutputPath] = useState(null);
-
-  const auditSections = [
-    { id: 1, title: 'Linux Kernel Information', command: 'uname -a' },
-    // ... rest of the sections remain the same ...
-  ];
+  const [showSudoPrompt, setShowSudoPrompt] = useState(false);
+  const [sudoPassword, setSudoPassword] = useState('');
+  const [confirmingAuth, setConfirmingAuth] = useState(false);
   
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
 
-  const handleRunAudit = async () => {
-    setLoading(true);
-    setError(null);
-    setOutputPath(null);
-    
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/audit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-  
-      setAuditData({
-        results: data.results,
-        metadata: data.metadata
-      });
-      setOutputPath(data.outputPath);
-    } catch (err) {
-      setError(`Failed to run audit: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+  const handleRunAudit = () => {
+    setShowSudoPrompt(true);
   };
 
   const handleDownloadPDF = async () => {
@@ -67,7 +34,6 @@ const AuditLogger = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Get the filename from the Content-Disposition header or use a default
       const contentDisposition = response.headers.get('Content-Disposition');
       const filenameMatch = contentDisposition && contentDisposition.match(/filename="(.+)"/);
       const filename = filenameMatch ? filenameMatch[1] : 'audit-report.pdf';
@@ -83,6 +49,60 @@ const AuditLogger = () => {
       document.body.removeChild(a);
     } catch (err) {
       setError('Failed to download PDF: ' + err.message);
+    }
+  };
+
+  const handleSudoSubmit = async (e) => {
+    e.preventDefault();
+    setConfirmingAuth(true);
+    setError(null);
+    
+    try {
+      // First verify sudo access
+      const authResponse = await fetch(`${BACKEND_URL}/api/verify-sudo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: sudoPassword }),
+      });
+
+      if (!authResponse.ok) {
+        throw new Error('Invalid sudo password');
+      }
+
+      // If sudo verification successful, proceed with audit
+      setShowSudoPrompt(false);
+      setLoading(true);
+      
+      const response = await fetch(`${BACKEND_URL}/api/audit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: sudoPassword }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      const file = data.outputPath.split('/').pop();
+      setFileName(file);
+  
+      setOutputPath(data.outputPath);
+      console.log(outputPath);
+    } catch (err) {
+      setError(`Failed to run audit: ${err.message}`);
+    } finally {
+      setSudoPassword(''); // Clear password
+      setLoading(false);
+      setConfirmingAuth(false);
     }
   };
 
@@ -124,16 +144,64 @@ const AuditLogger = () => {
             </Alert>
           )}
 
-          {!auditData && !loading && (
+          {!loading && !showSudoPrompt && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Click "Run Audit" to start system security analysis. The results will be automatically saved.
+                Click "Run Audit" to start system security analysis. Sudo access will be required.
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Rest of the component remains the same */}
+          {showSudoPrompt && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Sudo Authentication Required</h3>
+                <p className="text-gray-600 mb-4">
+                  Please enter your sudo password to proceed with the security audit.
+                </p>
+                <form onSubmit={handleSudoSubmit}>
+                  <input
+                    type="password"
+                    className="w-full p-2 border rounded mb-4"
+                    placeholder="Enter sudo password"
+                    value={sudoPassword}
+                    onChange={(e) => setSudoPassword(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                      onClick={() => {
+                        setShowSudoPrompt(false);
+                        setSudoPassword('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                      disabled={!sudoPassword || confirmingAuth}
+                    >
+                      {confirmingAuth ? 'Verifying...' : 'Confirm'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+          {outputPath && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">PDF Preview</h3>
+              <iframe
+                src={`${BACKEND_URL}/outputs/${fileName}`}
+                className="w-full h-[500px] border rounded"
+                title="PDF Preview"
+              ></iframe>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
